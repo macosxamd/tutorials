@@ -1,0 +1,180 @@
+Deploying Windows using **ImageX** (a tool that was part of the older **Windows Automated Installation Kit (AIK)**) is a similar process to using **DISM**, but ImageX is specifically designed for capturing and applying Windows images. It works well for large-scale deployments and offers a straightforward way to deploy `.wim` images in a Windows Preinstallation Environment (WinPE).
+
+Here’s a step-by-step guide on how to deploy Windows with **ImageX** from **Windows PE**:
+
+### Prerequisites:
+
+1. **Windows PE (WinPE) Bootable USB/DVD**: You need a bootable Windows PE USB drive or DVD. This can be created using the Windows ADK (Assessment and Deployment Kit).
+2. **Windows Image (.wim)**: The Windows installation image (`install.wim`) that contains the Windows OS you want to deploy (typically found in the `sources` folder of your Windows installation media).
+3. **Disk Partitioning Tool (e.g., `diskpart`)**: You will need to partition and format the target disk before applying the Windows image.
+
+---
+
+### Step-by-Step Guide:
+
+#### Step 1: Boot into Windows PE
+
+1. **Insert your bootable Windows PE USB/DVD** into the target machine.
+2. Boot the machine and configure the BIOS/UEFI to boot from the USB/DVD.
+3. Once booted into Windows PE, you will see a command prompt.
+
+#### Step 2: Prepare the Target Disk with `diskpart`
+
+Before applying the image, the target disk needs to be partitioned and formatted.
+
+1. Launch the `diskpart` utility by typing:
+
+   ```
+   diskpart
+   ```
+2. List all the available disks:
+
+   ```
+   list disk
+   ```
+3. Select the target disk (for example, `disk 0`):
+
+   ```
+   select disk 0
+   ```
+4. Clean the disk to remove any existing partitions (warning: this will erase all data on the disk):
+
+   ```
+   clean
+   ```
+5. Create a new primary partition for the system:
+
+   ```
+   create partition primary size=100000
+   ```
+6. Format the primary partition (e.g., `C:`):
+
+   ```
+   format fs=ntfs quick
+   ```
+7. Assign a drive letter to the partition:
+
+   ```
+   assign letter=C
+   ```
+8. If needed, create additional partitions (e.g., a recovery partition) and assign letters to them.
+9. Exit `diskpart`:
+
+   ```
+   exit
+   ```
+
+#### Step 3: Apply the Image Using **ImageX**
+
+Now you will use **ImageX** to apply the Windows image (`install.wim`) to the newly prepared partition.
+
+1. **Locate the `install.wim` image**:
+   The `install.wim` file is typically located on your Windows installation media, in the `sources` folder (e.g., `D:\sources\install.wim`).
+
+2. **Apply the image**:
+   Use **ImageX** to apply the selected image from the `install.wim` file to the target partition (in this case, `C:`). For example:
+
+   ```
+   imagex /apply D:\sources\install.wim 1 C:\
+   ```
+
+   Explanation:
+
+   * `/apply D:\sources\install.wim` – Specifies the path to the `install.wim` image file.
+
+   * `1` – This refers to the image index number. If you’re deploying the standard Windows 10 image, this is usually `1`, but you can check the available images in the `.wim` file (see below).
+
+   * `C:\` – The target partition where the image will be applied.
+
+   > **Note:** If you're not sure which index number corresponds to the correct image, use the `imagex` command to list the available images in the `.wim` file.
+
+3. **List the images in `install.wim`**:
+
+   ```
+   imagex /info D:\sources\install.wim
+   ```
+
+   This will display the available images within the `.wim` file, along with their index numbers. You can then select the appropriate index to apply.
+
+#### Step 4: Make the System Bootable
+
+After applying the image, the system partition needs to be made bootable.
+
+1. **Run the `bcdboot` command** to copy boot files from the newly applied image and configure the boot sector:
+
+   ```
+   bcdboot C:\Windows /s C: /f UEFI
+   ```
+
+   This command will do the following:
+
+   * `/s C:` – Specifies the system partition where the boot files will be placed. In most cases, this will be the same as the Windows partition (e.g., `C:`).
+   * `/f UEFI` – Specifies that the boot configuration should be for a UEFI system (use `/f BIOS` for legacy BIOS systems).
+
+#### Step 5: (Optional) Configure the Recovery Partition
+
+If you’ve created a separate recovery partition (e.g., `R:`), you can configure it to be used for system recovery.
+
+1. To set the recovery partition, you can use the `reagentc` tool. First, mount the recovery partition, then run:
+
+   ```
+   reagentc /setreimage /path R:\Recovery\WindowsRE
+   ```
+
+   This will set up the recovery partition for the system recovery environment.
+
+#### Step 6: Finalize and Reboot
+
+1. After applying the image and making the system bootable, you can reboot the machine:
+
+   ```
+   wpeutil reboot
+   ```
+
+2. The system should boot into the newly deployed Windows OS. If everything is set up correctly, Windows will finalize the installation process during the first boot.
+
+---
+
+### Additional Tips:
+
+#### 1. **Checking Image Index in the `.wim` File**
+
+If you're unsure about the index number of the image you want to apply (for example, if there are multiple Windows versions in the `install.wim`), use the `imagex` tool to list the available images:
+
+```
+imagex /info D:\sources\install.wim
+```
+
+This will provide the index number, description, and other details for each image inside the `.wim` file.
+
+#### 2. **Driver Injection (Optional)**
+
+If you need to inject drivers into the image before applying it, you can use `imagex` for this as well. First, mount the image:
+
+```
+imagex /mount D:\sources\install.wim 1 C:\mount
+```
+
+Then, copy your drivers into the mounted image directory:
+
+```
+xcopy D:\drivers\* C:\mount\drivers\ /e /h
+```
+
+After injecting the drivers, unmount the image and commit changes:
+
+```
+imagex /unmount /commit C:\mount
+```
+
+#### 3. **Automated Deployment Using `unattend.xml`**
+
+To automate the installation process (such as setting up regions, language, product key, and user information), you can include an `unattend.xml` file. Place it in the root of the Windows image or specify it during the deployment process to bypass interactive setup prompts.
+
+---
+
+### Summary:
+
+* **ImageX** is a great tool for capturing and deploying Windows images in environments where you need flexibility and control over the deployment process.
+* This method involves preparing the disk with `diskpart`, applying the image using `imagex`, making the system bootable with `bcdboot`, and optionally configuring the recovery partition.
+* **ImageX** is somewhat outdated compared to **DISM**, but it remains an effective tool for simpler imaging tasks in legacy environments. If you are working with modern deployments, it’s recommended to use **DISM** or other tools in the newer **Windows ADK**.
