@@ -1,0 +1,63 @@
+1. Copy slsvc.exe to C:\System32\slsvc.exe
+2. Create a service [ sc create "Software Protection" binPath= "C:\Windows\System32\slsvc.exe" start= auto obj= "NT AUTHORITY\NetworkService" ]
+3. Add description [ sc description "Software Protection" "Provides software protection and licensing functionality." ]
+4. Verify creation [ sc qc "Software Protection" ]
+5. Start the service [ net start "Software Protection" ]
+
+🧱 Step-by-Step: Create the KMS SRV Record (Windows DNS)
+1. Open DNS Manager
+
+On your DNS server:
+
+Press Win + R, type dnsmgmt.msc, and hit Enter.
+
+In the left pane, expand your DNS zone (for example, yourdomain.local).
+
+2. Create a New SRV Record
+
+Right-click your zone → Other New Records…
+
+Scroll down and choose Service Location (SRV) → click Create Record…
+
+3. Fill in the SRV Record Details
+Field	Value
+Service	_vlmcs
+Protocol	_tcp
+Port number	1688
+Host offering this service	kms.yourdomain.local (or the FQDN of your KMS host)
+
+Click OK, then Done.
+
+4. (Optional) Verify the Record
+
+From any domain-joined client, run:
+
+nslookup -type=srv _vlmcs._tcp.yourdomain.local
+
+
+You should see your KMS host listed.
+
+5. Confirm KMS Service Operation
+
+On the KMS host, make sure the Software Protection Service is running:
+
+net start sppsvc
+
+
+Then check that port 1688 is listening:
+
+netstat -ano | find "1688"
+
+⚙️ Example Output
+
+If everything’s correct:
+
+Server:  dc01.yourdomain.local
+Address:  10.0.0.10
+
+_vlmcs._tcp.yourdomain.local  SRV service location:
+          priority = 0
+          weight = 0
+          port = 1688
+          svr hostname = kms.yourdomain.local
+
