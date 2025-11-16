@@ -1,0 +1,129 @@
+To **remove, restore, and change the Product Key (Pkey)** in Windows Vista or later versions, you can follow these detailed step-by-step instructions. We'll go through each of the processes for both retail and OEM (Original Equipment Manufacturer) keys.
+
+### **1. Remove or Change the Product Key**
+
+If you're looking to **remove** or **change** your Windows product key, you can do so using several methods. Here are two main ways:
+
+#### Method 1: Using Command Prompt (Slmgr.vbs Script)
+
+1. **Open Command Prompt as Administrator**:
+
+   * Click on the **Start Menu** and type `cmd` in the search box.
+   * Right-click on **Command Prompt** and select **Run as administrator**.
+
+2. **Remove the Current Product Key** (if you want to remove it before entering a new one):
+
+   * Type the following command and press **Enter**:
+
+     ```
+     slmgr.vbs /upk
+     ```
+   * This command will uninstall the product key. You will no longer have a valid activation key.
+
+3. **Change the Product Key** (if you want to replace it with a new one):
+
+   * Type the following command and press **Enter**:
+
+     ```
+     slmgr.vbs /ipk XXXXX-XXXXX-XXXXX-XXXXX-XXXXX
+     ```
+
+     Replace `XXXXX-XXXXX-XXXXX-XXXXX-XXXXX` with your new product key.
+
+4. **Activate the New Product Key**:
+
+   * After entering the new key, type this command and press **Enter** to activate Windows:
+
+     ```
+     slmgr.vbs /ato
+     ```
+
+   You should see a confirmation message if the product key is successfully activated.
+
+#### Method 2: Using Windows Settings (For Windows 10/11)
+
+1. **Open Settings**:
+
+   * Press **Win + I** to open **Settings**.
+
+2. **Navigate to Activation**:
+
+   * Go to **Update & Security** → **Activation**.
+
+3. **Change Product Key**:
+
+   * Under the **Change product key** section, click **Change product key**.
+   * Enter your new product key and click **Next** to proceed with activation.
+
+4. **Activate**:
+
+   * Windows will automatically attempt to activate your system using the new key. If successful, it will notify you.
+
+### **2. Restore the Product Key (If You Have a Backup)**
+
+If you’ve **removed the product key** or need to restore a previous one, you'll need to either retrieve it from a backup (if you have one), or use a recovery method. There are a couple of ways to recover a key:
+
+#### Method 1: Using Third-Party Tools
+
+Some tools can help you recover the product key that is currently installed on your system. Popular options include:
+
+* **Magical Jelly Bean Keyfinder**: This free program can retrieve your Windows product key and other software keys (if applicable).
+
+  1. Download and install **Magical Jelly Bean Keyfinder**.
+  2. Run the program, and it will display the product key associated with your system.
+
+* **ProduKey** by NirSoft: This tool displays all product keys for Microsoft products, including Windows.
+
+  1. Download **ProduKey** from NirSoft’s website.
+  2. Run it, and it will show you the product key that’s currently activated on your system.
+
+#### Method 2: If You Have a Recovery Partition
+
+For OEM systems (those pre-installed with Windows), a **recovery partition** may allow you to restore the product key:
+
+1. Reboot your system and press the appropriate key to enter the **recovery mode** (usually **F8**, **F10**, or **F12**, depending on the manufacturer).
+2. Navigate through the recovery options and select the option to **restore your system to factory settings**. This should restore your product key along with the original system installation.
+
+   *Note: This method will erase your data, so ensure you back up important files before proceeding.*
+
+### **3. Change the Product Key (Again) After Activation**
+
+If you ever need to change the product key again after you've already activated Windows:
+
+1. **Open Settings** (Windows 10/11):
+
+   * Press **Win + I** to open **Settings**.
+2. **Go to Activation**:
+
+   * Navigate to **Update & Security** → **Activation**.
+3. **Click on "Change product key"**:
+
+   * Enter the new product key and proceed.
+
+If you don’t have the product key and need to change it, the above tools (Magical Jelly Bean or ProduKey) will help you retrieve the one currently used.
+
+### **Troubleshooting**
+
+* **If Activation Fails**: If you're having trouble activating Windows after changing the key, you may need to contact Microsoft support for assistance.
+
+  * Open Command Prompt (Admin) and run:
+
+    ```
+    slui 4
+    ```
+
+    This will start the activation wizard and let you contact Microsoft support for phone activation.
+
+* **OEM vs. Retail Keys**: If you have an OEM key (usually the case for computers that came pre-installed with Windows), it may only work with the original hardware. Retail keys, on the other hand, are more flexible and can be used on different hardware.
+
+* **Invalid Key**: Make sure that the product key you’re entering is correct and matches the version of Windows you're running (e.g., Pro, Home, Enterprise).
+
+---
+
+### **Summary**
+
+* To **remove a key**, use the `slmgr.vbs /upk` command.
+* To **change** the product key, use the `slmgr.vbs /ipk` followed by your new key.
+* To **restore** a key, use a third-party tool like Magical Jelly Bean Keyfinder or ProduKey, or rely on your OEM recovery options.
+
+If you’re having specific issues with a certain version of Windows, let me know, and I can help guide you further!
