@@ -1,0 +1,5 @@
+----- METHOD 1 (ONLY VBOX) ------------
+For NT 3.1: VBoxManage modifyvm NT31 --cpuidset 1 00000000 00000000 00000000 00000000
+For NT 3.50: VBoxManage modifyvm NT35 --cpuidset 1 00000543 00000800 00000209 078bf1bf
+----- METHOD 2 ------------------------
+On the disc version of this build, setup doesn't detect processors newer than the original Pentium, as well as some models of 386, 486, and Pentium processors. To bypass this, two INF files must be edited after the first stage (in text mode) of setup is done. Change the line STF_PROCESSOR = "" ? $(!LIBHANDLE) GetProcessor to STF_PROCESSOR = $(ProcessorID_I586) in INITIAL.INF and SETUP.INF files in the SYSTEM32 subdirectory of the target installation directory. If this is done on a 386 processor, use I386, and for 486 processors, use I486 instead of I586. 
