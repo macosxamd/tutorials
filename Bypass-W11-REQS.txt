@@ -1,0 +1,124 @@
+Sure — here’s the **complete, detailed walkthrough** of the **Microsoft-documented registry method** (the “LabConfig” workaround) that lets you install **Windows 11 on unsupported hardware**.
+
+This method is **officially allowed by Microsoft** for testing or evaluation and does **not involve modifying protected system files or bypassing activation** — it simply tells the installer to skip strict hardware requirement checks (like TPM 2.0, Secure Boot, and CPU family).
+
+---
+
+## ⚙️ What This Workaround Does
+
+During Windows Setup, it checks your hardware for:
+
+* **TPM 2.0**
+* **Secure Boot**
+* **Supported CPU**
+* **4 GB RAM and 64 GB storage**
+
+If your PC fails any of these, Setup normally stops.
+The `LabConfig` registry key tells Setup to **ignore those checks** and proceed.
+
+---
+
+## 🪟 Step-by-Step: Bypass Windows 11 Hardware Checks via Registry
+
+### 1️⃣ Boot Into the Windows 11 Installer
+
+1. Create a Windows 11 bootable USB (with Microsoft’s **Media Creation Tool** or ISO + Rufus).
+2. Boot your computer from that USB.
+3. At the first setup screen (language/keyboard selection), **press `Shift + F10`** to open **Command Prompt**.
+
+You are now in a **WinPE** environment running inside Setup.
+
+---
+
+### 2️⃣ Open the Registry Editor
+
+Type:
+
+```cmd
+regedit
+```
+
+and press **Enter**.
+
+This launches **Registry Editor** inside the preinstallation environment.
+
+---
+
+### 3️⃣ Create the “LabConfig” Key
+
+1. In Registry Editor, navigate to:
+
+   ```
+   HKEY_LOCAL_MACHINE\SYSTEM\Setup
+   ```
+2. Right-click the **Setup** folder → **New → Key**.
+3. Name the new key:
+
+   ```
+   LabConfig
+   ```
+
+---
+
+### 4️⃣ Add the Bypass Values
+
+Inside the **LabConfig** key, create the following **DWORD (32‑bit)** values:
+
+| Value Name              | Type      | Data |
+| ----------------------- | --------- | ---- |
+| `BypassTPMCheck`        | REG_DWORD | 1    |
+| `BypassSecureBootCheck` | REG_DWORD | 1    |
+| `BypassCPUCheck`        | REG_DWORD | 1    |
+
+(If you also need to skip RAM or storage checks, you can optionally add:)
+
+| Optional             | REG_DWORD | 1 |
+| -------------------- | --------- | - |
+| `BypassRAMCheck`     | REG_DWORD | 1 |
+| `BypassStorageCheck` | REG_DWORD | 1 |
+
+---
+
+### 5️⃣ Close Registry Editor
+
+When all values are added, close **Regedit** and then close the Command Prompt window.
+
+---
+
+### 6️⃣ Continue Installation
+
+You’re back in the Windows 11 Setup wizard.
+Click **Next**, then **Install now** — the setup will **skip hardware requirement checks** and continue like a normal installation.
+
+---
+
+## 🧾 Example of Command-Line (Optional Alternative)
+
+If you prefer to do it all from the Command Prompt instead of using Regedit’s GUI, you can type:
+
+```cmd
+reg add "HKLM\SYSTEM\Setup\LabConfig" /v BypassTPMCheck /t REG_DWORD /d 1 /f
+reg add "HKLM\SYSTEM\Setup\LabConfig" /v BypassSecureBootCheck /t REG_DWORD /d 1 /f
+reg add "HKLM\SYSTEM\Setup\LabConfig" /v BypassCPUCheck /t REG_DWORD /d 1 /f
+```
+
+(And optionally:)
+
+```cmd
+reg add "HKLM\SYSTEM\Setup\LabConfig" /v BypassRAMCheck /t REG_DWORD /d 1 /f
+reg add "HKLM\SYSTEM\Setup\LabConfig" /v BypassStorageCheck /t REG_DWORD /d 1 /f
+```
+
+Then close the Command Prompt and resume installation.
+
+---
+
+## ⚠️ Important Notes
+
+* **Microsoft Warning:** Installing Windows 11 on unsupported hardware means you **may not receive updates** (especially feature updates).
+* **Security features** (like TPM‑based encryption or Secure Boot validation) may not be active.
+* **Always back up** your data before attempting this.
+
+---
+
+Would you like me to include a version of this workaround that you can run as an **automated script** (e.g., `cmd` batch file you can execute in WinPE before setup)?
