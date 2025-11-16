@@ -1,0 +1,14 @@
+1. Go to the image location: C:\EmbeddedOS
+2. Go to WINNT\System32\config and look for a file named SYSTEM and SYSTEM.ALT
+3. Open regedt32.exe
+4. Go to HKEY_LOCAL_MACHINE
+5. Click Registry > Load Hive...
+6. Go to the location where SYSTEM / SYSTEM.ALT were.
+7. Load SYSTEM and give it a name:
+8. Go to HKEY_LOCAL_MACHINE > [Your name] > ControlSet001 > Control > ProductOptions
+9. Double click "ProductSuite"
+10. Change "Embedded Class: Temporary" to "Embedded Class: Class 2"
+11. Unload SYSTEM hive.
+12. Do the same with SYSTEM.ALT file.
+13. Unload SYSTEM.ALT hive.
+14. Deploy
