@@ -1,0 +1,149 @@
+Deploying a Windows operating system using DISM (Deployment Imaging Service and Management Tool) from Windows PE (Preinstallation Environment) is a powerful method for installing or repairing Windows images. This procedure is typically used for large-scale deployments, such as in IT environments or corporate setups.
+
+Here is a detailed step-by-step guide for deploying Windows using DISM from Windows PE:
+
+### Prerequisites:
+
+1. **Windows PE (WinPE) Bootable USB/DVD**:
+
+   * You need to have a bootable Windows PE USB drive or DVD. You can create this using the Windows ADK (Assessment and Deployment Kit) and the `MakeWinPEMedia` tool.
+
+2. **Windows Image (.wim)**:
+
+   * The Windows installation image (typically located in `install.wim` from the Windows installation media) should be available on a network share, USB drive, or local storage.
+
+3. **Disk Partitioning Tool**:
+
+   * You may also want to use a disk partitioning tool like `diskpart` to prepare the hard drive before deployment.
+
+### Step-by-Step Guide:
+
+#### Step 1: Boot into Windows PE
+
+1. **Insert your bootable Windows PE USB/DVD** into the computer you want to deploy Windows on.
+2. Boot the computer and configure the BIOS to boot from the USB or DVD drive.
+3. Once booted into Windows PE, you will see a command prompt window.
+
+#### Step 2: Prepare the Disk with `diskpart`
+
+Before deploying the Windows image, you'll need to partition and format the target disk (if it hasn't been done already). This can be done with the `diskpart` utility.
+
+1. Type `diskpart` and press Enter to launch the disk partition tool.
+2. Type `list disk` to show all the available disks on the system.
+3. Select the target disk (for example, `disk 0`) by typing:
+
+   ```
+   select disk 0
+   ```
+4. Clean the disk to remove any existing partitions (use this with caution, as it deletes all data on the disk):
+
+   ```
+   clean
+   ```
+5. Create the partitions:
+
+   * Create a primary partition for the system drive:
+
+     ```
+     create partition primary size=100000
+     ```
+   * Create a partition for the recovery partition (optional):
+
+     ```
+     create partition primary size=50000
+     ```
+6. Format the primary partition:
+
+   ```
+   format fs=ntfs quick
+   ```
+7. Assign drive letters:
+
+   ```
+   assign letter=C
+   ```
+8. If you created multiple partitions, assign drive letters accordingly (e.g., `assign letter=R` for the recovery partition).
+9. Exit `diskpart`:
+
+   ```
+   exit
+   ```
+
+#### Step 3: Mount the Windows Image Using DISM
+
+Next, you’ll use DISM to deploy the Windows image (`install.wim`) to the system. You need to mount the Windows image first.
+
+1. If your `install.wim` file is located on a network share, USB drive, or other accessible location, navigate to the directory where the `.wim` file is stored. For example, if the `install.wim` file is on a USB drive, it may be in the `D:\sources` folder.
+
+2. Use DISM to apply the image to the target disk partition. For example:
+
+   ```
+   dism /apply-image /imagefile:D:\sources\install.wim /index:1 /applydir:C:\
+   ```
+
+   Explanation:
+
+   * `/imagefile:D:\sources\install.wim` – Specifies the location of the `.wim` file.
+   * `/index:1` – Specifies the index number of the image in the `.wim` file (usually `1` for the main Windows image, but verify this if you have multiple images).
+   * `/applydir:C:\` – Specifies the drive letter where the image will be applied (the C: drive in this case).
+
+#### Step 4: Make the Windows Image Bootable (BCD)
+
+After applying the image to the target disk, you need to configure the boot sector and the Boot Configuration Data (BCD) so that the system can boot into Windows.
+
+1. Use the following command to prepare the system to boot into Windows:
+
+   ```
+   bcdboot C:\Windows /s C: /f UEFI
+   ```
+
+   This command does the following:
+
+   * `/s C:` – Specifies the system partition (if you have a separate system partition, specify its drive letter here).
+   * `/f UEFI` – Specifies that the boot files are for a UEFI-based system (use `/f BIOS` if it's a legacy BIOS system).
+
+#### Step 5: Configure the Recovery Partition (Optional)
+
+If you created a separate recovery partition (e.g., drive R:), you can configure it as a recovery partition using the `reagentc` tool.
+
+1. To add the recovery partition, run the following command:
+
+   ```
+   reagentc /setreimage /path R:\Recovery\WindowsRE
+   ```
+
+   This will set the recovery image path for system recovery.
+
+#### Step 6: Finalize and Reboot
+
+1. Type `exit` to close the command prompt.
+2. Reboot the system by typing:
+
+   ```
+   wpeutil reboot
+   ```
+3. The system should now boot into the newly deployed Windows image.
+
+### Troubleshooting:
+
+* **Image Index:** If you’re not sure which image to apply from the `install.wim`, you can list the available images inside the `.wim` file by running:
+
+  ```
+  dism /get-wiminfo /wimfile:D:\sources\install.wim
+  ```
+* **Boot Issues:** If the system doesn’t boot correctly after deployment, double-check the BCD configuration and ensure the boot partition is set correctly.
+* **Network Drivers:** If deploying over the network, ensure network drivers are available in Windows PE. You may need to inject the necessary drivers using DISM if Windows PE doesn't recognize the network adapter.
+
+### Additional Considerations:
+
+* **Driver Injection:** Before applying the image, you can inject drivers into the `install.wim` using DISM:
+
+  ```
+  dism /image:C:\ /add-driver /driver:D:\drivers /recurse
+  ```
+
+  This will add the necessary drivers from the `D:\drivers` directory into the image.
+
+* **Automating with Unattend.xml:** If you want to fully automate the deployment, you can use an `unattend.xml` file to answer all installation questions, such as region, language, and user setup. You can place this file in the `C:\Windows\Panther` folder or specify it during the DISM process.
+
+This method provides a flexible and efficient way to deploy Windows images across multiple machines, especially for IT professionals managing a large number of systems.
