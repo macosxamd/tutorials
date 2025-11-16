@@ -1,14 +1,128 @@
-1. Go to the image location: C:\EmbeddedOS
-2. Go to WINNT\System32\config and look for a file named SYSTEM and SYSTEM.ALT
-3. Open regedt32.exe
-4. Go to HKEY_LOCAL_MACHINE
-5. Click Registry > Load Hive...
-6. Go to the location where SYSTEM / SYSTEM.ALT were.
-7. Load SYSTEM and give it a name:
-8. Go to HKEY_LOCAL_MACHINE > [Your name] > ControlSet001 > Control > ProductOptions
-9. Double click "ProductSuite"
-10. Change "Embedded Class: Temporary" to "Embedded Class: Class 2"
-11. Unload SYSTEM hive.
-12. Do the same with SYSTEM.ALT file.
-13. Unload SYSTEM.ALT hive.
-14. Deploy
+It looks like you're following a **manual process to modify the registry** for a **Windows Embedded OS** installation by loading and modifying registry hives, specifically the **SYSTEM** and **SYSTEM.ALT** files. This method is typically used for **customizing product settings** or **reconfiguring licensing** on Windows Embedded systems.
+
+I’ll provide a step-by-step breakdown of the instructions, but please be **cautious** when modifying the registry, especially when dealing with SYSTEM-level files. Improper changes can render the system unbootable or cause other issues.
+
+Here’s a more detailed guide for each step:
+
+---
+
+### **Step-by-Step Guide: Modifying the Registry for Windows Embedded OS**
+
+#### **Step 1: Go to the Image Location**
+
+1. **Navigate to** the location of your Windows Embedded OS image:
+
+   * **Path**: `C:\EmbeddedOS`
+
+   In this location, you should find the necessary files for the embedded OS, including the `SYSTEM` and `SYSTEM.ALT` files under the `\WINNT\System32\config` directory.
+
+#### **Step 2: Go to `WINNT\System32\config`**
+
+1. Open **File Explorer**.
+2. Go to: `C:\EmbeddedOS\WINNT\System32\config`.
+3. Look for the two **SYSTEM** files:
+
+   * `SYSTEM` — This is the primary system registry hive.
+   * `SYSTEM.ALT` — This is likely an alternate or backup registry hive.
+
+#### **Step 3: Open `regedt32.exe`**
+
+1. **Press Win + R**, type `regedt32.exe`, and hit **Enter**.
+
+   This opens the **Registry Editor**, which allows you to modify the Windows registry.
+
+#### **Step 4: Go to HKEY_LOCAL_MACHINE**
+
+1. In **Registry Editor**, expand the `HKEY_LOCAL_MACHINE` key on the left pane.
+
+#### **Step 5: Click Registry > Load Hive...**
+
+1. In the menu bar, go to **Registry > Load Hive...**.
+2. This option allows you to load an offline registry hive (such as `SYSTEM`) into your current registry.
+
+#### **Step 6: Go to the Location of `SYSTEM` / `SYSTEM.ALT`**
+
+1. In the **Load Hive** window, navigate to the location where the `SYSTEM` or `SYSTEM.ALT` file is located:
+
+   * `C:\EmbeddedOS\WINNT\System32\config`
+
+#### **Step 7: Load `SYSTEM` and Give It a Name**
+
+1. Select the `SYSTEM` file and click **Open**.
+2. You will be prompted to **enter a name** for this loaded hive. You can name it something like `MyHive` or `EmbeddedHive` to easily identify it later.
+
+#### **Step 8: Go to HKEY_LOCAL_MACHINE > [Your Name] > ControlSet001 > Control > ProductOptions**
+
+1. After loading the hive, it will appear under `HKEY_LOCAL_MACHINE` with the name you chose (e.g., `MyHive`).
+2. Navigate to the following path:
+
+   * **HKEY_LOCAL_MACHINE > [Your Hive Name] > ControlSet001 > Control > ProductOptions**
+
+   In the **ProductOptions** folder, you should see various registry values that control settings related to the product.
+
+#### **Step 9: Double-click "ProductSuite"**
+
+1. In the `ProductOptions` folder, look for the `ProductSuite` entry.
+2. **Double-click** on `ProductSuite` to modify its value.
+
+#### **Step 10: Change "Embedded Class: Temporary" to "Embedded Class: Class 2"**
+
+1. In the value data box, you should see:
+
+   * `Embedded Class: Temporary`
+2. **Change the value** to:
+
+   * `Embedded Class: Class 2`
+
+   This step may be specific to configuring a different embedded class or version of the operating system.
+
+#### **Step 11: Unload the `SYSTEM` Hive**
+
+1. After modifying the `ProductSuite` value, **close** the `ProductOptions` registry key.
+2. Go back to **HKEY_LOCAL_MACHINE** and right-click on the hive you loaded (e.g., `MyHive`).
+3. Select **Unload Hive** from the context menu.
+
+   This will unload the registry hive from your current session, ensuring that the changes are written and saved properly.
+
+---
+
+### **Step 12: Do the Same with the `SYSTEM.ALT` File**
+
+1. Repeat **Steps 5 to 11** for the `SYSTEM.ALT` file:
+
+   * **Load** the `SYSTEM.ALT` file into a new hive (give it a unique name).
+   * Navigate to `ControlSet001 > Control > ProductOptions` in the newly loaded hive.
+   * **Change** `Embedded Class: Temporary` to `Embedded Class: Class 2`.
+   * **Unload** the `SYSTEM.ALT` hive once changes are made.
+
+---
+
+### **Step 13: Unload the `SYSTEM.ALT` Hive**
+
+1. After you have finished modifying `SYSTEM.ALT`, go back to **HKEY_LOCAL_MACHINE**.
+2. Right-click on the hive you just loaded (e.g., `MyHive_ALT`) and select **Unload Hive**.
+
+---
+
+### **Step 14: Deploy**
+
+1. Now that the changes are made to both the **SYSTEM** and **SYSTEM.ALT** registry hives, **deploy** the image to your Windows Embedded device.
+
+   You may need to perform a **reboot** or **reapply the image** depending on your setup.
+
+---
+
+### **Important Notes:**
+
+* **Backup Your Registry**: Before making any registry changes, always **backup your registry** and your files to avoid any system corruption.
+
+  * You can **export** the registry before loading a hive by selecting **File > Export** in **regedt32.exe**.
+
+* **Editing ProductOptions**: Modifying `ProductOptions` to change the **embedded class** can impact the behavior of your **embedded OS**. Ensure that you understand the implications of the changes being made.
+
+* **Testing**: After deploying the image, it’s a good idea to test the device to ensure that it boots and operates correctly with the new registry settings.
+
+---
+
+If you need further clarification on any of the steps or encounter issues along the way, feel free to ask!
+
