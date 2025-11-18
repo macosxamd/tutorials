@@ -1,19 +1,132 @@
-########## Linux (Bash) ##########
+############################################################
+# HOW TO JOIN MODERN AND OLD LINUX SYSTEMS TO ACTIVE DIRECTORY
+############################################################
 
-# Debian/Ubuntu based distributions
-sudo apt install realmd sssd sssd-tools adcli libnss-sss libpam-sss samba-common-bin oddjob oddjob-mkhomedir packagekit
 
-# Redhat based distributions
-sudo dnf install realmd sssd adcli samba-common-tools oddjob oddjob-mkhomedir PackageKit krb5-workstation
+############################################################
+# SECTION 1: MODERN LINUX (Ubuntu 18+/RHEL7+/Rocky/Alma/Debian10+)
+# METHOD: REALMD + SSSD
+############################################################
 
-sudo hostnamectl set-hostname [computername.domainname]
-realm discover [Domainname]
-sudo realm -v join [Domainname] -U [AD Username]
-# Necessary if domain controller is running Windows Server 2025
-sudo realm -v join --membership-software=samba [Domainname] -U [AD Username]
-sudo pam-auth-update
+# 1. Install required packages
+# Ubuntu/Debian:
+sudo apt install realmd sssd sssd-tools adcli samba-common packagekit
 
-########## Windows (PowerShell) ########## 
+# RHEL/Rocky/Alma:
+sudo dnf install realmd sssd adcli samba-common-tools oddjob oddjob-mkhomedir
 
-Get-ADComputer [computername] -Properties * 
-Get-DnsServerResourceRecord -ZoneName [domain.name] -ComputerName [dns server] -RRType A 
+
+# 2. Discover AD domain
+realm discover yourdomain.com
+
+
+# 3. Join the domain
+sudo realm join -U Administrator yourdomain.com
+
+# (Optional) Join to a specific OU
+sudo realm join --computer-ou="OU=LinuxServers,DC=yourdomain,DC=com" -U Administrator yourdomain.com
+
+
+# 4. Enable automatic home directory creation
+# Ubuntu/Debian:
+sudo pam-auth-update --enable mkhomedir
+
+# RHEL/Rocky/Alma:
+sudo authselect select sssd with-mkhomedir --force
+
+
+# 5. Test AD user lookup
+id user@yourdomain.com
+
+
+# 6. Limit which AD users/groups can log in
+realm permit --groups "Domain Admins"
+realm permit user1@yourdomain.com
+
+
+
+############################################################
+# SECTION 2: OLDER LINUX (Ubuntu 14/16, RHEL/CentOS 6/7, Debian 7/8/9)
+# METHOD: SAMBA + WINBIND
+############################################################
+
+# 1. Install required packages
+# Ubuntu/Debian:
+sudo apt-get install samba samba-common-bin krb5-user winbind libpam-winbind libnss-winbind
+
+# RHEL/CentOS:
+sudo yum install samba samba-common samba-winbind samba-winbind-clients krb5-workstation
+
+
+# 2. Configure Kerberos (/etc/krb5.conf)
+# Replace YOURDOMAIN.COM
+[libdefaults]
+ default_realm = YOURDOMAIN.COM
+ dns_lookup_realm = false
+ dns_lookup_kdc = true
+
+
+# 3. Configure Samba (/etc/samba/smb.conf)
+# Replace YOURDOMAIN and YOURDOMAIN.COM
+[global]
+ workgroup = YOURDOMAIN
+ security = ADS
+ realm = YOURDOMAIN.COM
+
+ idmap config * : backend = tdb
+ idmap config * : range = 10000-20000
+
+ winbind use default domain = true
+ winbind enum users = yes
+ winbind enum groups = yes
+
+
+# 4. Join AD domain
+sudo net ads join -U Administrator
+
+
+# 5. Enable and restart winbind
+sudo systemctl restart winbind
+sudo systemctl enable winbind
+
+
+# 6. Test domain lookups
+wbinfo -u
+wbinfo -g
+id someuser
+
+
+
+############################################################
+# SECTION 3: VERY OLD LINUX (Ubuntu 12, RHEL5/6)
+# METHOD: PBIS / LIKELYWISE OPEN
+############################################################
+
+# 1. Install PBIS
+sudo apt install pbis-open
+
+# 2. Join the domain
+sudo domainjoin-cli join yourdomain.com Administrator
+
+# 3. Test AD user lookup
+id user@yourdomain.com
+
+
+
+############################################################
+# SECTION 4: TESTING AND TROUBLESHOOTING
+############################################################
+
+# Test SSH login
+ssh user@yourdomain.com@hostname
+
+# Check domain join status
+# realmd:
+realm list
+
+# winbind:
+net ads info
+
+############################################################
+# END
+############################################################
