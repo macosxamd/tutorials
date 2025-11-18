@@ -1,194 +1,146 @@
 # ============================================================
-# Join Windows to Active Directory (All Versions)
+# JOIN WINDOWS TO ACTIVE DIRECTORY (All Versions)
 # Plain-text-safe version for GitHub
-# All explanations begin with "#"
 # Works for: Windows XP, Vista, 7, 8, 8.1, 10, 11, Server editions
+# Explanations/comments start with "#"
 # ============================================================
-
 
 # ------------------------------------------------------------
 # 1. REQUIREMENTS
 # ------------------------------------------------------------
-# - Windows device connected to the domain network
-# - AD Domain Name, ex:
-#       corp.example.com
+# - Windows machine connected to the AD network
+# - AD domain name, e.g. corp.example.com
 # - AD account with permissions to join computers
-# - Computer name (ex: WIN-1234)
+# - Computer name (e.g. WIN-1234)
 # - Local admin rights on the machine
+# - DNS must point to AD DNS servers (critical!)
+# - Time must be synced with domain controllers (important for Kerberos)
 # ------------------------------------------------------------
 
-
 # ============================================================
-# 2. JOIN WINDOWS TO ACTIVE DIRECTORY (GUI – ALL VERSIONS)
+# 2. GUI METHOD (All Windows Versions)
 # ============================================================
-
 # ------------------------------
-# A. GUI (Win XP → Win 11)
+# Steps:
 # ------------------------------
 # 1. Right-click "This PC" or "Computer"
 # 2. Select "Properties"
-# 3. Open "Advanced system settings"
-# 4. Go to the tab: "Computer Name"
+# 3. Click "Advanced system settings"
+# 4. Open the "Computer Name" tab
 # 5. Click "Change..."
-# 6. Select:
-#       Member of → Domain
-# 7. Enter the domain name:
+# 6. Select "Member of → Domain"
+# 7. Enter AD domain:
 #       corp.example.com
-# 8. Enter AD join credentials
-# 9. Reboot when prompted
-
-
-# ============================================================
-# 3. WINDOWS 10 / 11 – SETTINGS METHOD
-# ============================================================
+# 8. Enter AD credentials with domain join rights
+# 9. Click OK, accept reboot prompt
 
 # ------------------------------
-# A. Join Domain via Settings
+# Windows 10/11 Alternative:
 # ------------------------------
-# 1. Start → Settings
-# 2. Accounts
-# 3. Access work or school
-# 4. Click "Connect"
-# 5. Select:
-#       Join this device to a local Active Directory domain
-# 6. Enter the domain:
-#       corp.example.com
-# 7. Enter AD join username + password
-# 8. Reboot when asked
-
+# 1. Start → Settings → Accounts → Access work or school → Connect
+# 2. Choose "Join this device to a local Active Directory domain"
+# 3. Enter AD domain: corp.example.com
+# 4. Enter AD credentials
+# 5. Reboot
 
 # ============================================================
-# 4. COMMAND-LINE AD BIND (Windows)
+# 3. COMMAND-LINE METHODS
 # ============================================================
-
-# Windows supports joining AD using:
-# - NETDOM (built into Windows Pro/Enterprise)
-# - PowerShell commands
-# - WMIC (deprecated but still functional on older versions)
-
 
 # ------------------------------
 # A. NETDOM (All supported Windows)
 # ------------------------------
 # Syntax:
-# netdom join COMPUTERNAME /domain:corp.example.com /userd:DOMAIN_ADMIN /passwordd:PASSWORD
-
-# Example:
+netdom join COMPUTERNAME /domain:corp.example.com /userd:DOMAIN_ADMIN /passwordd:PASSWORD
+# Example using environment variable:
 netdom join %COMPUTERNAME% /domain:corp.example.com /userd:domain\\adminuser /passwordd:MyPassword123
-
 # Reboot:
 shutdown /r /t 0
 
-
 # ------------------------------
-# B. PowerShell – Add-Computer (Win 7 → Win 11)
+# B. PowerShell (Windows 7 → 11)
 # ------------------------------
+# Add computer to domain and restart:
 Add-Computer -DomainName "corp.example.com" -Credential "DOMAIN\\adminuser" -Restart
 
-
-# ------------------------------
-# C. PowerShell with OU Placement
-# ------------------------------
+# Add computer to domain into a specific OU:
 Add-Computer -DomainName "corp.example.com" `
   -OUPath "OU=Workstations,DC=corp,DC=example,DC=com" `
   -Credential "DOMAIN\\adminuser" `
   -Restart
 
-
 # ------------------------------
-# D. WMIC (Legacy Windows)
+# C. WMIC (Legacy Windows)
 # ------------------------------
 wmic computersystem where name="%COMPUTERNAME%" call joindomainorworkgroup `
   name="corp.example.com" username="domain\\adminuser" password="PASSWORD"
 
-
 # ============================================================
-# 5. RENAME COMPUTER (Before Domain Join)
+# 4. RENAME COMPUTER BEFORE JOIN (Optional but recommended)
 # ============================================================
+# Using WMIC:
 wmic computersystem where name="%COMPUTERNAME%" call rename name="WIN-1234"
 
-# OR PowerShell:
+# Using PowerShell:
 Rename-Computer -NewName "WIN-1234" -Restart
 
-
 # ============================================================
-# 6. VERIFY DOMAIN MEMBERSHIP
+# 5. VERIFY DOMAIN MEMBERSHIP
 # ============================================================
-
-# Check domain state:
+# Check domain:
 systeminfo | findstr /B /C:"Domain"
 
-# Check AD domain controller contact:
+# Check domain controller connectivity:
 nltest /dsgetdc:corp.example.com
 
-# Check secure channel:
+# Verify secure channel:
 nltest /sc_verify:corp.example.com
 
 # Display computer domain role:
 wmic computersystem get domain, domainrole
 
-
 # ============================================================
-# 7. UNJOIN WINDOWS FROM ACTIVE DIRECTORY
+# 6. UNJOIN / REMOVE FROM DOMAIN
 # ============================================================
+# GUI method:
+# - System Properties → Computer Name → Change → Select Workgroup → WORKGROUP
+# - Enter AD credentials if prompted, reboot
 
-# ------------------------------
-# A. GUI (All Windows versions)
-# ------------------------------
-# 1. System Properties → Computer Name
-# 2. Click "Change..."
-# 3. Select:
-#       Workgroup
-# 4. Enter:
-#       WORKGROUP
-# 5. Enter AD credentials if prompted
-# 6. Reboot
-
-
-# ------------------------------
-# B. Command Line – NETDOM
-# ------------------------------
+# NETDOM method:
 netdom remove %COMPUTERNAME% /domain:corp.example.com /userd:DOMAIN\\adminuser /passwordd:PASSWORD
 shutdown /r /t 0
 
-
-# ------------------------------
-# C. PowerShell
-# ------------------------------
+# PowerShell method:
 Remove-Computer -UnjoinDomaincredential "DOMAIN\\adminuser" -Force -Restart
 
-
 # ============================================================
-# 8. TROUBLESHOOTING
+# 7. TROUBLESHOOTING
 # ============================================================
-
 # Check DNS:
 ipconfig /all
 
-# Flush DNS:
+# Flush DNS cache:
 ipconfig /flushdns
 
 # Reset network stack:
 netsh int ip reset
 netsh winsock reset
 
-# Ensure correct time sync (important for domain joins):
+# Ensure correct time sync:
 w32tm /resync
 
 # Test domain connectivity:
 nltest /dsgetdc:corp.example.com
 
-# Test if domain join ports reachable:
-# Needed: 53, 88, 389, 445, 464, 3268, 135
+# Test if domain join ports reachable (53, 88, 389, 445, 464, 3268, 135):
 Test-NetConnection dc01.corp.example.com -Port 389
 
-
 # ============================================================
-# 9. NOTES
+# 8. NOTES
 # ============================================================
-# - Domain join requires correct DNS pointing to domain controllers.
-# - Windows Home editions cannot join a domain (upgrade required).
-# - Faster domain joins can be done via PowerShell scripts or GPO.
-# - For large deployments: use SCCM, Intune Autopilot, or MDT.
+# - Domain join requires DNS to point to AD DNS servers
+# - Windows Home editions cannot join a domain (upgrade needed)
+# - Use PowerShell scripts or NETDOM for faster deployment
+# - Large deployments: SCCM, MDT, Intune Autopilot recommended
+# - Always ensure system clock is synced with AD (Kerberos requirement)
 # ============================================================
-
