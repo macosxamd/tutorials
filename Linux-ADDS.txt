@@ -1,0 +1,19 @@
+########## Linux (Bash) ##########
+
+# Debian/Ubuntu based distributions
+sudo apt install realmd sssd sssd-tools adcli libnss-sss libpam-sss samba-common-bin oddjob oddjob-mkhomedir packagekit
+
+# Redhat based distributions
+sudo dnf install realmd sssd adcli samba-common-tools oddjob oddjob-mkhomedir PackageKit krb5-workstation
+
+sudo hostnamectl set-hostname [computername.domainname]
+realm discover [Domainname]
+sudo realm -v join [Domainname] -U [AD Username]
+# Necessary if domain controller is running Windows Server 2025
+sudo realm -v join --membership-software=samba [Domainname] -U [AD Username]
+sudo pam-auth-update
+
+########## Windows (PowerShell) ########## 
+
+Get-ADComputer [computername] -Properties * 
+Get-DnsServerResourceRecord -ZoneName [domain.name] -ComputerName [dns server] -RRType A 
