@@ -1,6 +1,39 @@
 ############################################################
 # HOW TO JOIN MODERN AND OLD LINUX SYSTEMS TO ACTIVE DIRECTORY
+# COMPLETE GUIDE INCLUDING DNS, HOSTNAME, PAM/NSS, AND TESTING
 ############################################################
+
+############################################################
+# SECTION 0: PREPARATION - HOSTNAME, DNS, AND HOSTS
+############################################################
+
+# 1. Set proper hostname (FQDN recommended)
+# Example: linux01.yourdomain.com
+sudo hostnamectl set-hostname linux01.yourdomain.com
+
+# Verify
+hostname
+hostname -f
+
+# 2. Configure /etc/hosts
+sudo nano /etc/hosts
+# Add entries like:
+127.0.0.1   localhost
+192.168.1.50 linux01.yourdomain.com linux01
+# Save and exit
+
+# 3. Configure /etc/resolv.conf (AD DNS server)
+sudo nano /etc/resolv.conf
+# Example:
+search yourdomain.com
+nameserver 192.168.1.10   # Replace with your AD DNS server
+nameserver 192.168.1.11   # Optional secondary DNS
+# Save and exit
+
+# Test DNS resolution
+nslookup yourdomain.com
+nslookup dc1.yourdomain.com
+ping dc1.yourdomain.com
 
 
 ############################################################
@@ -10,39 +43,33 @@
 
 # 1. Install required packages
 # Ubuntu/Debian:
-sudo apt install realmd sssd sssd-tools adcli samba-common packagekit
+sudo apt update
+sudo apt install -y realmd sssd sssd-tools adcli samba-common packagekit
 
 # RHEL/Rocky/Alma:
-sudo dnf install realmd sssd adcli samba-common-tools oddjob oddjob-mkhomedir
-
+sudo dnf install -y realmd sssd adcli samba-common-tools oddjob oddjob-mkhomedir
 
 # 2. Discover AD domain
 realm discover yourdomain.com
 
-
 # 3. Join the domain
 sudo realm join -U Administrator yourdomain.com
 
-# (Optional) Join to a specific OU
+# Optional: join to a specific OU
 sudo realm join --computer-ou="OU=LinuxServers,DC=yourdomain,DC=com" -U Administrator yourdomain.com
-
 
 # 4. Enable automatic home directory creation
 # Ubuntu/Debian:
 sudo pam-auth-update --enable mkhomedir
-
 # RHEL/Rocky/Alma:
 sudo authselect select sssd with-mkhomedir --force
-
 
 # 5. Test AD user lookup
 id user@yourdomain.com
 
-
 # 6. Limit which AD users/groups can log in
 realm permit --groups "Domain Admins"
 realm permit user1@yourdomain.com
-
 
 
 ############################################################
@@ -52,22 +79,37 @@ realm permit user1@yourdomain.com
 
 # 1. Install required packages
 # Ubuntu/Debian:
-sudo apt-get install samba samba-common-bin krb5-user winbind libpam-winbind libnss-winbind
+sudo apt-get update
+sudo apt-get install -y samba samba-common-bin krb5-user winbind libpam-winbind libnss-winbind
 
 # RHEL/CentOS:
-sudo yum install samba samba-common samba-winbind samba-winbind-clients krb5-workstation
-
+sudo yum install -y samba samba-common samba-winbind samba-winbind-clients krb5-workstation
 
 # 2. Configure Kerberos (/etc/krb5.conf)
-# Replace YOURDOMAIN.COM
+sudo nano /etc/krb5.conf
+# Replace YOURDOMAIN.COM and DC hostname(s)
 [libdefaults]
  default_realm = YOURDOMAIN.COM
  dns_lookup_realm = false
  dns_lookup_kdc = true
 
+[realms]
+ YOURDOMAIN.COM = {
+     kdc = dc1.yourdomain.com
+     admin_server = dc1.yourdomain.com
+ }
+
+[domain_realm]
+ .yourdomain.com = YOURDOMAIN.COM
+ yourdomain.com = YOURDOMAIN.COM
+# Save and exit
+
+# Test Kerberos connectivity
+kinit Administrator
+klist
 
 # 3. Configure Samba (/etc/samba/smb.conf)
-# Replace YOURDOMAIN and YOURDOMAIN.COM
+sudo nano /etc/samba/smb.conf
 [global]
  workgroup = YOURDOMAIN
  security = ADS
@@ -76,25 +118,40 @@ sudo yum install samba samba-common samba-winbind samba-winbind-clients krb5-wor
  idmap config * : backend = tdb
  idmap config * : range = 10000-20000
 
+ idmap config YOURDOMAIN : backend = rid
+ idmap config YOURDOMAIN : range = 20000-500000
+
  winbind use default domain = true
  winbind enum users = yes
  winbind enum groups = yes
+ winbind nss info = rfc2307
+ template shell = /bin/bash
+ template homedir = /home/%U
+# Save and exit
 
+# 4. Configure NSS (/etc/nsswitch.conf)
+sudo nano /etc/nsswitch.conf
+passwd:     files winbind
+shadow:     files winbind
+group:      files winbind
+# Save and exit
 
-# 4. Join AD domain
+# 5. Join AD domain
 sudo net ads join -U Administrator
 
-
-# 5. Enable and restart winbind
-sudo systemctl restart winbind
+# 6. Enable and restart winbind
 sudo systemctl enable winbind
+sudo systemctl restart winbind
+sudo systemctl restart smbd nmbd   # optional if using Samba shares
 
-
-# 6. Test domain lookups
+# 7. Test domain lookups
 wbinfo -u
 wbinfo -g
+getent passwd someuser
 id someuser
-
+kinit someuser
+klist
+net ads testjoin
 
 
 ############################################################
@@ -103,7 +160,8 @@ id someuser
 ############################################################
 
 # 1. Install PBIS
-sudo apt install pbis-open
+sudo apt update
+sudo apt install -y pbis-open
 
 # 2. Join the domain
 sudo domainjoin-cli join yourdomain.com Administrator
@@ -112,21 +170,61 @@ sudo domainjoin-cli join yourdomain.com Administrator
 id user@yourdomain.com
 
 
+############################################################
+# SECTION 4: PAM, HOME DIRECTORIES AND AUTOMOUNTS
+############################################################
+
+# 1. Ensure PAM can create home directories
+# Ubuntu/Debian:
+sudo pam-auth-update --enable mkhomedir
+
+# RHEL/CentOS/Rocky/Alma:
+sudo authselect select sssd with-mkhomedir --force
+
+# 2. Optional: auto-mount home directories via autofs
+sudo apt install -y autofs  # Debian/Ubuntu
+sudo yum install -y autofs  # RHEL/CentOS
+
+# Configure /etc/auto.master and /etc/auto.home if needed
+
 
 ############################################################
-# SECTION 4: TESTING AND TROUBLESHOOTING
+# SECTION 5: TESTING AND TROUBLESHOOTING
 ############################################################
 
-# Test SSH login
-ssh user@yourdomain.com@hostname
+# Test SSH login with domain user
+ssh 'user@yourdomain.com'@hostname
 
 # Check domain join status
-# realmd:
-realm list
+realm list          # modern
+net ads info        # older
 
-# winbind:
-net ads info
+# Kerberos tickets
+klist
+
+# List domain users
+wbinfo -u
+wbinfo -g
+
+# Verify ID mapping
+getent passwd someuser
+id someuser
+
+# DNS / network troubleshooting
+ping dc1.yourdomain.com
+nslookup dc1.yourdomain.com
+dig dc1.yourdomain.com
+
+# Check services
+systemctl status winbind
+systemctl status sssd
+
+# Logs:
+# - /var/log/sssd/sssd.log
+# - /var/log/samba/log.winbindd
+# - /var/log/secure or /var/log/auth.log
+
 
 ############################################################
-# END
+# END OF COMPLETE AD JOIN GUIDE
 ############################################################
