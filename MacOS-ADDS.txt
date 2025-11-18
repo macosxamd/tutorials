@@ -1,0 +1,169 @@
+# ============================================================
+# Join macOS to Active Directory (All Versions)
+# Plain-text-safe version for GitHub
+# All explanations and comments start with "#"
+# ============================================================
+
+
+# ------------------------------------------------------------
+# 1. REQUIREMENTS
+# ------------------------------------------------------------
+# - macOS device on the domain network
+# - AD domain name (ex: corp.example.com)
+# - Account with permissions to join machines
+# - Computer name for the Mac (ex: MAC-1234)
+# ------------------------------------------------------------
+
+
+# ============================================================
+# 2. MODERN macOS (10.12 → macOS 15) AD BINDING
+# ============================================================
+
+# ------------------------------
+# A. System Settings (GUI)
+# ------------------------------
+# 1. Open System Settings
+# 2. Go to "Users & Groups"
+# 3. Select "Login Options"
+# 4. Click "Join" next to "Network Account Server"
+# 5. Enter the AD domain:
+#       corp.example.com
+# 6. Authenticate with AD credentials
+# 7. Restart (recommended)
+
+
+# ------------------------------
+# B. Directory Utility (Advanced)
+# ------------------------------
+# 1. Open Spotlight → search "Directory Utility"
+# 2. Unlock with admin credentials
+# 3. Select "Active Directory"
+# 4. Click "Bind…" or "Edit…"
+# 5. Enter domain:
+#       corp.example.com
+# 6. Enter AD join credentials
+# 7. Optional: configure mobile accounts, UNC paths,
+#    admin groups, packet signing/encryption, etc.
+
+
+# ============================================================
+# 3. LEGACY OS X (10.5 → 10.11) AD BINDING
+# ============================================================
+
+# ------------------------------
+# OS X 10.7 → 10.11
+# ------------------------------
+# 1. System Preferences
+# 2. Users & Groups
+# 3. Unlock → Login Options
+# 4. Click "Join…"
+# 5. Enter AD domain + credentials
+
+# ------------------------------
+# OS X 10.5 → 10.6
+# ------------------------------
+# 1. System Preferences
+# 2. Accounts
+# 3. Login Options
+# 4. Click "Join…"
+# 5. Enter AD credentials
+# 6. Use Directory Utility for more advanced settings
+
+
+# ============================================================
+# 4. COMMAND-LINE AD BINDING (All Versions)
+# ============================================================
+
+# ------------------------------
+# Set Computer Name
+# ------------------------------
+sudo scutil --set ComputerName "MAC-1234"
+sudo scutil --set LocalHostName "MAC-1234"
+sudo scutil --set HostName "MAC-1234"
+
+# ------------------------------
+# Basic AD Bind
+# ------------------------------
+sudo dsconfigad -add corp.example.com \
+  -username DOMAIN_ADMIN \
+  -password 'PASSWORD'
+
+# ------------------------------
+# Bind with Specific Computer ID
+# ------------------------------
+sudo dsconfigad -add corp.example.com \
+  -computer MAC-1234 \
+  -username DOMAIN_ADMIN \
+  -password 'PASSWORD'
+
+# ------------------------------
+# Recommended AD Options
+# ------------------------------
+sudo dsconfigad \
+  -mobile enable \
+  -mobileconfirm disable \
+  -useuncpath enable \
+  -localhome disable \
+  -packetsign allow \
+  -packetencrypt allow \
+  -groups "DOMAIN\\admins"
+
+
+# ============================================================
+# 5. UNBIND / REMOVE AD
+# ============================================================
+
+# ------------------------------
+# GUI
+# ------------------------------
+# System Settings → Users & Groups → Login Options → Unbind
+
+# ------------------------------
+# Command Line
+# ------------------------------
+sudo dsconfigad -remove \
+  -username DOMAIN_ADMIN \
+  -password 'PASSWORD'
+
+
+# ============================================================
+# 6. VERIFICATION
+# ============================================================
+
+# Check AD Bind Status
+dsconfigad -show
+
+# Verify AD User Lookup
+id username@corp.example.com
+
+# Check DNS
+nslookup corp.example.com
+
+
+# ============================================================
+# 7. TROUBLESHOOTING
+# ============================================================
+
+# Test Domain Controller Connection
+ping -c 4 dc01.corp.example.com
+
+# Flush DNS Cache
+sudo dscacheutil -flushcache
+sudo killall -HUP mDNSResponder
+
+# Fix Time Sync (critical for AD)
+sudo systemsetup -setnetworktimeserver time.corp.example.com
+sudo systemsetup -setusingnetworktime on
+
+
+# ============================================================
+# 8. NOTES
+# ============================================================
+# macOS supports AD binding, but Apple is shifting toward:
+# - Kerberos SSO Extension
+# - Cloud identity (Azure AD / Entra)
+# - MDM-based authentication workflows
+# For enterprise deployments (Jamf, Munki, Intune),
+# AD binding can be automated via scripts.
+# ============================================================
+
