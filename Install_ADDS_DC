@@ -1,0 +1,53 @@
+# === Install Packages ===
+# Debian/Ubuntu
+sudo apt update && sudo apt install -y samba krb5-user smbclient winbind
+# RHEL/CentOS
+sudo yum update -y && sudo yum install -y samba samba-dc samba-client krb5-workstation
+
+# === Stop Old Services ===
+sudo systemctl stop smbd nmbd winbind
+sudo systemctl disable smbd nmbd winbind
+
+# === Provision Domain (interactive) ===
+sudo samba-tool domain provision --use-rfc2307 --interactive
+# Enter domain (e.g. EXAMPLE.LAN), realm (EXAMPLE.LAN), and Administrator password
+
+# === Configure Kerberos ===
+sudo tee /etc/krb5.conf > /dev/null << 'EOF'
+[libdefaults]
+    default_realm = EXAMPLE.LAN
+    dns_lookup_realm = false
+    dns_lookup_kdc = true
+EOF
+
+# Test Kerberos
+kinit administrator@EXAMPLE.LAN
+
+# === Start Samba AD DC ===
+sudo systemctl unmask samba-ad-dc
+sudo systemctl enable samba-ad-dc
+sudo systemctl start samba-ad-dc
+
+# === Verify ===
+systemctl status samba-ad-dc
+host -t SRV _ldap._tcp.example.lan
+
+# === Optional: Custom Systemd Unit ===
+sudo tee /etc/systemd/system/samba-ad-dc.service > /dev/null << 'EOF'
+[Unit]
+Description=Samba Active Directory Domain Controller
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/sbin/samba -D
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable samba-ad-dc
+sudo systemctl start samba-ad-dc
+

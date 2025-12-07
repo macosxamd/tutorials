@@ -1,0 +1,51 @@
+# Install build tools
+# Debian/Ubuntu
+sudo apt update
+sudo apt install -y build-essential git
+
+# RHEL/CentOS
+sudo yum groupinstall -y "Development Tools"
+sudo yum install -y git
+
+# Clone your repo
+git clone https://github.com/macosxamd/vlmcsd-linux.git
+cd vlmcsd-linux
+
+# Build
+make
+
+# Install binary
+sudo cp bin/vlmcsd /usr/local/bin/
+sudo chmod 755 /usr/local/bin/vlmcsd
+# Create service file
+sudo tee /etc/systemd/system/vlmcsd.service > /dev/null << 'EOF'
+[Unit]
+Description=vlmcsd KMS Emulator Service
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/vlmcsd -D
+Restart=on-failure
+User=nobody
+Group=nogroup
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Reload systemd, enable and start service
+sudo systemctl daemon-reload
+sudo systemctl enable vlmcsd
+sudo systemctl start vlmcsd
+
+# Check status
+systemctl status vlmcsd
+
+# Check port 1688 is listening
+netstat -tulpn | grep 1688
+
+# Test with included client
+./bin/vlmcs -v -l 127.0.0.1
+
+
