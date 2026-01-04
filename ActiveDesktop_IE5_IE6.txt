@@ -1,0 +1,88 @@
+How do I get Active Desktop/Quick Launch toolbar for Win95 or Windows NT 4.0?
+
+The Windows Desktop Update component included with Internet Explorer 4.0, 4.01, 4.01 Service Pack 1, 4.01 Service Pack 2, and Microsoft Windows 98 includes the following enhancements to the classic Windows shell:
+
+    The Active Desktop.
+
+    A single, customizable Explorer with Web View.
+
+    A Web-integrated Start menu and taskbar.
+
+    Click (rather than double-click) items to open them; point at items to select them.
+
+To install the Quick Launch toolbar and the Active Desktop interface on Windows 95 and Windows NT 4.0 you need to install the Windows Desktop Update package, also known as Active Desktop (although they are not the same thing: Active Desktop is merely a part of the Desktop Update). This is included with Internet Explorer version 4.x only; it is not included with IE5.x or IE6.
+
+You must install IE4.x before upgrading to a later version of IE if you want the Desktop Update installed. If you have already installed IE 5.x or IE6 and would like to install the Windows Desktop Update, carry out the following steps:
+
+    Uninstall Internet Explorer 5.x or Internet Explorer 6.
+
+    If Internet Explorer 4.01 SP2 (the latest version of IE4) is not already installed on your computer, install it.
+
+    Install the Windows Desktop Update.
+
+    Reinstall Internet Explorer 5.x or Internet Explorer 6.
+
+Unfortunately, Microsoft has removed IE4 from its website and is no longer available for download. You can still find IE4 in various places, like the Windows NT Option Pack CD, Windows 95 C OSR2.5 CD, and the Outlook 98 CD.
+
+If you can not obtain IE4, there are still a few ways to install the Desktop Update, but you must have a copy of IE5Setup.EXE, which is included with the Internet Explorer 5.x installation source files.
+
+Make sure that you are connected to the Internet.
+
+Open a DOS Prompt/Command prompt, and go to the directory where the IE5 installation source files are located.
+
+Execute the following command:
+
+For NT 4.0:
+
+​IE5Setup.exe /C:"ie5wzd /e:IE4Shell_NTx86 /I:Y" 
+
+For WIN95:
+
+​IE5Setup.exe /C:"ie5wzd /e:IE4Shell_WIN /I:Y" 
+
+You can also install the Desktop Update directly IE6, but as with the above commands for IE5, you need to be connected to the Internet.
+
+For NT 4.0:
+
+​IE6Setup.exe /C:"ie6wzd /e:IE4Shell_NTx86 /I:Y" 
+
+IE6 is NOT supported under Win95, and cannot be installed.
+
+You can also use the Internet Explorer Administration Kit (IEAK) to create and distribute a customized Internet Explorer 5 installation package to install the Windows Desktop Update.
+
+Read 254919 for more information on how to install the Windows Desktop Update through IEAK:
+How to Create an IEAK Package to Install the Windows Desktop Update
+
+    Download the IEAK.
+
+    Run the IEAK Wizard.
+
+    When the Welcome to the IEAK dialog box is displayed, click Next.
+
+    When the Gathering Information dialog box is displayed, click Next.
+
+    When the Company Name and Customization Code dialog box is displayed, type your company name and customization code, click Corporate Administrator, and then click Next.
+
+    When the Platform Options dialog box is displayed, click Windows 9x/NT 4.0, and then click Next.
+
+    When the File Locations dialog box is displayed, click the destination folder in which you want to create this build, and then click Next.
+
+    When the Language Selection dialog box is displayed, click the appropriate language, and then click Next.
+
+    When the Media Selection dialog box is displayed, make the appropriate selections, and then click Next.
+
+    When the Feature Selection dialog box is displayed, click Uncheck All Features, click Desktop Customization, and then click Next.
+
+    When the Specifying Setup Parameters dialog box is displayed, click Next.
+
+    When the Microsoft Download Site dialog box is displayed, click Next.
+
+    When the Automatic Version Synchronization dialog box is displayed, make sure all components have been synchronized by clicking Synchronize All, and then click Next.
+
+    When the Windows Desktop Update dialog box is displayed, click Yes, and then click Next.
+
+    When the Customizing the Browser dialog box is displayed, click Next.
+
+    When the Wizard Complete dialog box is displayed, click Next, and then click Finish.
+
+The Windows Desktop Update package is now ready to distribute. 
